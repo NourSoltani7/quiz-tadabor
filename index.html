@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>اختبار التدبر</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --green: #2d6a4f;
+    --green-light: #52b788;
+    --green-pale: #d8f3dc;
+    --ink: #1b2028;
+    --paper: #f8f7f2;
+    --muted: #8a8f99;
+    --border: #ddd9d1;
+    --gold: #b8832a;
+    --radius: 14px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Cairo', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--green);
+    color: white;
+    text-align: center;
+    padding: 44px 24px 36px;
+  }
+  .header .bismillah {
+    font-family: 'Amiri', serif;
+    font-size: 26px;
+    opacity: 0.4;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .header h1 {
+    font-family: 'Amiri', serif;
+    font-size: clamp(22px, 5vw, 34px);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .header p { font-size: 14px; opacity: 0.75; font-weight: 300; }
+
+  /* Name field */
+  .name-section {
+    max-width: 680px;
+    margin: 28px auto 0;
+    padding: 0 20px;
+  }
+  .name-box {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .name-box label {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--green);
+  }
+  .name-box input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+    outline: none;
+    transition: border-color 0.18s;
+    text-align: right;
+  }
+  .name-box input:focus { border-color: var(--green-light); }
+  .name-box input.error { border-color: #c0392b; }
+
+  /* Progress */
+  .progress-wrap {
+    max-width: 680px;
+    margin: 20px auto 0;
+    padding: 0 20px;
+  }
+  .progress-bar-bg {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green-light);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Questions */
+  .questions {
+    max-width: 680px;
+    margin: 24px auto 0;
+    padding: 0 20px 40px;
+  }
+
+  .q-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .q-card.answered { border-color: var(--green-light); }
+  .q-card.unanswered-error { border-color: #c0392b; animation: shake 0.35s; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .q-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 20px 16px;
+  }
+  .q-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    background: #f0ede8;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s;
+  }
+  .q-card.answered .q-num { background: var(--green-pale); color: var(--green); }
+  .q-text { flex: 1; font-size: 15px; font-weight: 700; line-height: 1.65; padding-top: 6px; }
+
+  .q-options { padding: 0 20px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+  .option-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.16s;
+  }
+  .option-label:hover { border-color: var(--green-light); background: #f5fdf8; }
+
+  .option-label input[type="radio"] { display: none; }
+
+  .option-label.selected {
+    background: var(--green-pale);
+    border-color: var(--green);
+  }
+
+  .option-circle {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    transition: all 0.16s;
+    background: white;
+    margin-top: 1px;
+  }
+  .option-label.selected .option-circle {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+  .option-text { flex: 1; font-size: 14.5px; line-height: 1.6; }
+
+  /* Submit */
+  .submit-area {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+  .error-msg {
+    background: #fdecea;
+    color: #8b1e1e;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .submit-btn {
+    width: 100%;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .submit-btn:hover { background: #235c43; }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { background: var(--muted); cursor: not-allowed; }
+
+  /* Success overlay */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,20,15,0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .success-overlay.show { display: flex; }
+  .success-box {
+    background: white;
+    border-radius: 18px;
+    padding: 40px 32px;
+    text-align: center;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  }
+  .success-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+  .success-box h2 { font-family: 'Amiri', serif; font-size: 24px; color: var(--green); margin-bottom: 8px; }
+  .success-box p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 28px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s;
+    margin-bottom: 12px;
+    width: 100%;
+    justify-content: center;
+  }
+  .download-btn:hover { background: #235c43; }
+  .close-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.18s;
+  }
+  .close-btn:hover { border-color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="bismillah">﷽</span>
+  <h1>اختبار تدبر القرآن الكريم</h1>
+  <p>اختر الإجابة الصحيحة لكل سؤال، ثم اضغط «تسليم» لتحميل إجاباتك</p>
+</div>
+
+<!-- اسم الطالب -->
+<div class="name-section">
+  <div class="name-box">
+    <label for="studentName">اسم الطالب:</label>
+    <input type="text" id="studentName" placeholder="أدخل اسمك الكامل هنا…">
+  </div>
+</div>
+
+<!-- شريط التقدم -->
+<div class="progress-wrap">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+  <div class="progress-label">
+    <span id="progressText">0 من 10 أسئلة</span>
+    <span id="progressPct">0%</span>
+  </div>
+</div>
+
+<!-- الأسئلة -->
+<div class="questions" id="questionsContainer"></div>
+
+<!-- زر التسليم -->
+<div class="submit-area">
+  <div class="error-msg" id="errorMsg">⚠️ يرجى الإجابة على جميع الأسئلة قبل التسليم.</div>
+  <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
+    <span>📤</span> تسليم الإجابات وتحميل PDF
+  </button>
+</div>
+
+<!-- نافذة النجاح -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <span class="success-icon">✅</span>
+    <h2>تم حفظ إجاباتك!</h2>
+    <p>تم تجهيز ملف PDF بإجاباتك. قم بتحميله وأرسله لأستاذك للتصحيح.</p>
+    <button class="download-btn" id="downloadBtn">⬇️ تحميل ملف الإجابات</button>
+    <button class="close-btn" onclick="document.getElementById('successOverlay').classList.remove('show')">إغلاق</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    text: "الفرق بين التدبر الإيماني والتدبر الشيطاني:",
+    options: [
+      { letter: "أ", text: "كلاهما فيه أجر." },
+      { letter: "ب", text: "فرق في الوسيلة واتحاد في الغاية." },
+      { letter: "ج", text: "فرق في الغاية واتحاد في الوسيلة." },
+      { letter: "د", text: "فرق في الغاية والوسيلة." },
+    ]
+  },
+  {
+    text: "تدبر القرآن الكريم:",
+    options: [
+      { letter: "أ", text: "خاص بالعلماء." },
+      { letter: "ب", text: "لا بد أن يستغرق وقتاً طويلاً." },
+      { letter: "ج", text: "التدبر لا يكون لأهل المعاصي." },
+      { letter: "د", text: "جميع ما ذكر غير صحيح." },
+    ]
+  },
+  {
+    text: "حتى يكون التدبر ناجحاً لا بد من:",
+    options: [
+      { letter: "أ", text: "أن يكون هناك مبالغة في التدقيق في مخارج الحروف." },
+      { letter: "ب", text: "معرفة معنى الآية." },
+      { letter: "ج", text: "أن يكون صوت المتدبر جميلاً." },
+      { letter: "د", text: "ليس أيٌّ مما سبق." },
+    ]
+  },
+  {
+    text: "من أخطاء التدبر:",
+    options: [
+      { letter: "أ", text: "تكرار الآية." },
+      { letter: "ب", text: "تأمل حال المتدبرين وتأثرهم بالقرآن الكريم." },
+      { letter: "ج", text: "الدمعة عند قراءة الآيات." },
+      { letter: "د", text: "ليس أيٌّ مما سبق." },
+    ]
+  },
+  {
+    text: "قراءة القرآن الكريم بطريق D4 تعني:",
+    options: [
+      { letter: "أ", text: "أقرأ القرآن الكريم كأنني أنظر إلى صورة." },
+      { letter: "ب", text: "أقرأ القرآن الكريم كأنني أنظر إلى قصة." },
+      { letter: "ج", text: "أقرأ القرآن الكريم كأنني جزء من المشهد القرآني." },
+      { letter: "د", text: "(أ) و(ب)." },
+    ]
+  },
+  {
+    text: "من معيقات التدبر:",
+    options: [
+      { letter: "أ", text: "عدم معرفة قيمة القرآن الكريم." },
+      { letter: "ب", text: "عدم تعظيم الآخرة والتعلق بالدنيا." },
+      { letter: "ج", text: "المعاصي." },
+      { letter: "د", text: "جميع ما ذكر." },
+    ]
+  },
+  {
+    text: "ما هو التدبر؟",
+    options: [
+      { letter: "أ", text: "معرفة المعنى اللغوي للآية." },
+      { letter: "ب", text: "التفاعل مع الآيات وما يلزمه هذا التفاعل." },
+      { letter: "ج", text: "معرفة سبب نزول الآية." },
+      { letter: "د", text: "ليس أيٌّ مما سبق." },
+    ]
+  },
+  {
+    text: "من العلامات الدالة على أنك تدبرت القرآن الكريم:",
+    options: [
+      { letter: "أ", text: "الدعاء عند المرور بآية عذاب أو آية نعيم." },
+      { letter: "ب", text: "معرفتك إلى أين وصلت في القراءة." },
+      { letter: "ج", text: "شعورك بالاستبشار وارتفاع المعنويات." },
+      { letter: "د", text: "جميع ما ذكر." },
+    ]
+  },
+  {
+    text: "من أمثلة التدبر الشيطاني:",
+    options: [
+      { letter: "أ", text: "لا وجود لصلاة ظهر ولا عصر." },
+      { letter: "ب", text: "لا وجود لذكر الحجاب في القرآن الكريم." },
+      { letter: "ج", text: "لا يجوز الحكم على النصارى القائلين بالتثليث بأنهم كفار." },
+      { letter: "د", text: "جميع ما ذكر." },
+    ]
+  },
+  {
+    text: "ما هي العبارة الخاطئة فيما يأتي:",
+    options: [
+      { letter: "أ", text: "قراءة القرآن الكريم بلا تدبر أفضل من عدم قراءته." },
+      { letter: "ب", text: "تدبر القرآن الكريم قد لا يأتيك بمعلومة جديدة.. لكن يذكرك بأمر غاب عنك." },
+      { letter: "ج", text: "عدم قراءة القرآن الكريم أفضل من قراءته دون تدبر." },
+      { letter: "د", text: "اختيار المكان لقراءة القرآن الكريم يزيد من فرصة تدبرك." },
+    ]
+  }
+];
+
+const userAnswers = new Array(questions.length).fill(null);
+
+// Build questions
+const container = document.getElementById('questionsContainer');
+questions.forEach((q, qi) => {
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  card.id = `qcard-${qi}`;
+
+  const optionsHTML = q.options.map(opt => `
+    <label class="option-label" id="opt-${qi}-${opt.letter}" onclick="selectOption(${qi}, '${opt.letter}')">
+      <input type="radio" name="q${qi}" value="${opt.letter}">
+      <div class="option-circle">${opt.letter}</div>
+      <div class="option-text">${opt.text}</div>
+    </label>
+  `).join('');
+
+  card.innerHTML = `
+    <div class="q-head">
+      <div class="q-num" id="qnum-${qi}">${qi + 1}</div>
+      <div class="q-text">${qi + 1}. ${q.text}</div>
+    </div>
+    <div class="q-options">${optionsHTML}</div>
+  `;
+  container.appendChild(card);
+});
+
+function selectOption(qi, letter) {
+  // Deselect all for this question
+  questions[qi].options.forEach(opt => {
+    document.getElementById(`opt-${qi}-${opt.letter}`).classList.remove('selected');
+  });
+  // Select chosen
+  document.getElementById(`opt-${qi}-${letter}`).classList.add('selected');
+  userAnswers[qi] = letter;
+
+  // Mark card as answered
+  const card = document.getElementById(`qcard-${qi}`);
+  card.classList.add('answered');
+  card.classList.remove('unanswered-error');
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  const pct = Math.round((answered / questions.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${answered} من ${questions.length} أسئلة`;
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function handleSubmit() {
+  const name = document.getElementById('studentName').value.trim();
+  const nameInput = document.getElementById('studentName');
+
+  // Validate name
+  let hasError = false;
+  if (!name) {
+    nameInput.classList.add('error');
+    nameInput.focus();
+    hasError = true;
+  } else {
+    nameInput.classList.remove('error');
+  }
+
+  // Check unanswered
+  const unanswered = [];
+  userAnswers.forEach((a, i) => { if (!a) unanswered.push(i); });
+
+  if (unanswered.length > 0) {
+    document.getElementById('errorMsg').classList.add('show');
+    unanswered.forEach(i => {
+      const card = document.getElementById(`qcard-${i}`);
+      card.classList.add('unanswered-error');
+      setTimeout(() => card.classList.remove('unanswered-error'), 500);
+    });
+    // Scroll to first unanswered
+    document.getElementById(`qcard-${unanswered[0]}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    hasError = true;
+  } else {
+    document.getElementById('errorMsg').classList.remove('show');
+  }
+
+  if (hasError) return;
+
+  // Generate PDF
+  generatePDF(name);
+}
+
+function generatePDF(name) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const pageW = 210;
+  const pageH = 297;
+  const margin = 20;
+  const contentW = pageW - margin * 2;
+
+  // Arabic text helper — reverses for RTL display in jsPDF
+  function rtl(text) {
+    // jsPDF doesn't natively support Arabic reshaping, so we use a workaround:
+    // render text right-aligned with x from right margin
+    return text;
+  }
+
+  // Colors
+  const green = [45, 106, 79];
+  const ink = [27, 32, 40];
+  const muted = [138, 143, 153];
+  const border = [220, 217, 209];
+  const pale = [216, 243, 220];
+
+  let y = 0;
+
+  // Header background
+  doc.setFillColor(...green);
+  doc.rect(0, 0, pageW, 52, 'F');
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('اختبار تدبر القرآن الكريم', pageW / 2, 22, { align: 'center' });
+
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(200, 230, 210);
+  doc.text('ورقة إجابات الطالب', pageW / 2, 32, { align: 'center' });
+
+  y = 62;
+
+  // Info box
+  doc.setFillColor(245, 243, 238);
+  doc.roundedRect(margin, y, contentW, 22, 3, 3, 'F');
+  doc.setDrawColor(...border);
+  doc.roundedRect(margin, y, contentW, 22, 3, 3, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...ink);
+  doc.text('اسم الطالب:', pageW - margin - 4, y + 8, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(name, pageW - margin - 35, y + 8, { align: 'right' });
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('التاريخ:', pageW - margin - 4, y + 17, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(dateStr, pageW - margin - 22, y + 17, { align: 'right' });
+
+  y += 32;
+
+  // Questions
+  doc.setFont('helvetica', 'normal');
+
+  questions.forEach((q, qi) => {
+    const answer = userAnswers[qi] || '—';
+    const chosenOption = q.options.find(o => o.letter === answer);
+
+    // Card height estimate
+    const cardH = 28;
+
+    // New page if needed
+    if (y + cardH > pageH - 25) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Card bg
+    const isEven = qi % 2 === 0;
+    doc.setFillColor(isEven ? 255 : 250, isEven ? 255 : 249, isEven ? 255 : 246);
+    doc.roundedRect(margin, y, contentW, cardH, 3, 3, 'F');
+    doc.setDrawColor(...border);
+    doc.roundedRect(margin, y, contentW, cardH, 3, 3, 'S');
+
+    // Question number circle
+    doc.setFillColor(...green);
+    doc.circle(margin + 8, y + 8, 5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${qi + 1}`, margin + 8, y + 10.5, { align: 'center' });
+
+    // Question text (truncated)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...ink);
+    const qText = q.text.length > 55 ? q.text.substring(0, 55) + '...' : q.text;
+    doc.text(qText, pageW - margin - 16, y + 10, { align: 'right' });
+
+    // Answer line
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+    doc.text('الإجابة المختارة:', pageW - margin - 16, y + 20, { align: 'right' });
+
+    // Answer badge
+    doc.setFillColor(...pale);
+    doc.roundedRect(margin + 4, y + 14, 50, 10, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...green);
+    const ansText = chosenOption ? `(${answer}) ${chosenOption.text.substring(0, 25)}` : '—';
+    doc.text(ansText, margin + 8, y + 20.5);
+
+    y += cardH + 5;
+  });
+
+  // Footer line
+  if (y + 20 < pageH - 10) {
+    y += 10;
+    doc.setDrawColor(...border);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+    doc.text('أرسل هذا الملف إلى الأستاذ للتصحيح  •  اختبار تدبر القرآن الكريم', pageW / 2, y, { align: 'center' });
+  }
+
+  // Add page numbers
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(`${p} / ${totalPages}`, pageW / 2, pageH - 8, { align: 'center' });
+  }
+
+  // Show success overlay and bind download
+  const pdfBlob = doc.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+
+  document.getElementById('downloadBtn').onclick = () => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `اجابات_${name.replace(/\s+/g, '_')}.pdf`;
+    a.click();
+  };
+
+  document.getElementById('successOverlay').classList.add('show');
+}
+</script>
+</body>
+</html>
